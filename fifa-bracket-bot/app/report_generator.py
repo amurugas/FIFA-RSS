@@ -94,7 +94,7 @@ def generate_ai_analysis(
         },
         "bracket_score": {
             "current": bracket_score.current_score,
-            "max_possible": bracket_score.current_score + bracket_score.max_possible_score,
+            "max_possible": bracket_score.max_possible_score,
             "health": bracket_score.health_score,
         },
         "yesterday_results": [

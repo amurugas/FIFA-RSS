@@ -213,7 +213,7 @@ def _build_reason(
     reasons: list[str] = []
     p = preferred.lower()
     if p == bracket.winner.lower():
-        reasons.append(f"you picked {preferred} as champion ({bracket.winner})")
+        reasons.append(f"you picked {preferred} as champion")
     elif p == bracket.runner_up.lower():
         reasons.append(f"you picked {preferred} as runner-up")
     elif p in [s.lower() for s in bracket.semifinals]:

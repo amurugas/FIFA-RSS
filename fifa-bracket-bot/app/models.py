@@ -137,20 +137,19 @@ class BracketScore:
         """Return a 0–100 bracket health score."""
         if self.max_possible_score == 0:
             return 0.0
-        # Base on remaining potential vs theoretical max
-        theoretical_max = self.current_score + self.max_possible_score
+        # max_possible_score is the total achievable score (current + remaining)
         overall_max = self._compute_overall_max()
         if overall_max == 0:
             return 0.0
-        return round((theoretical_max / overall_max) * 100, 1)
+        return round((self.max_possible_score / overall_max) * 100, 1)
 
     def _compute_overall_max(self) -> int:
         weights = ScoringWeights()
-        # Theoretical perfect bracket for a 32-team World Cup
-        # 32 group stage games × 3 results per team? Actually per-game:
-        # 48 group + 8 R16 + 4 QF + 2 SF + 1 F + champion bonus
+        # Theoretical perfect bracket for the 2026 FIFA World Cup (48-team format)
+        # 104 group stage matches + 8 R32 + 8 R16 + 4 QF + 2 SF + 1 F + champion bonus
         return (
-            48 * weights.group_stage
+            104 * weights.group_stage
+            + 8 * weights.round_of_16   # Round of 32 (use R16 weight as proxy)
             + 8 * weights.round_of_16
             + 4 * weights.quarterfinal
             + 2 * weights.semifinal

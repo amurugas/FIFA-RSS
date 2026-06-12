@@ -134,7 +134,7 @@ def calculate_bracket_score(
 
     return BracketScore(
         current_score=current_score,
-        max_possible_score=max_possible - current_score,
+        max_possible_score=max_possible,
         correct_picks=correct,
         incorrect_picks=incorrect,
         pending_picks=pending,
@@ -145,7 +145,7 @@ def get_scoring_summary(score: BracketScore) -> dict:
     """Return a human-readable summary dict."""
     return {
         "current_score": score.current_score,
-        "max_possible_score": score.current_score + score.max_possible_score,
+        "max_possible_score": score.max_possible_score,  # total achievable
         "health_score": score.health_score,
         "correct_picks": len(score.correct_picks),
         "incorrect_picks": len(score.incorrect_picks),
