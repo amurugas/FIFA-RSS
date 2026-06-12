@@ -1,37 +1,61 @@
 {
-  "winner": "Argentina",
-  "runner_up": "France",
+  "winner": "France",
+  "runner_up": "England",
+
   "semifinals": [
-    "Argentina",
-    "Brazil",
     "France",
-    "Spain"
+    "Spain",
+    "England",
+    "Argentina"
   ],
+
   "quarterfinals": [
-    "Argentina",
-    "Netherlands",
+    "France",
+    "Morocco",
+    "Spain",
+    "USA",
     "Brazil",
     "England",
-    "France",
-    "Portugal",
-    "Spain",
-    "Germany"
+    "Argentina",
+    "Portugal"
   ],
+
   "match_predictions": {
-    "R16_1": "Argentina",
-    "R16_2": "Netherlands",
-    "R16_3": "Brazil",
-    "R16_4": "England",
-    "R16_5": "France",
-    "R16_6": "Portugal",
-    "R16_7": "Spain",
-    "R16_8": "Germany",
-    "QF_1": "Argentina",
-    "QF_2": "Brazil",
-    "QF_3": "France",
-    "QF_4": "Spain",
-    "SF_1": "Argentina",
-    "SF_2": "France",
-    "F_1": "Argentina"
+    "R32_1": "Germany",
+    "R32_2": "France",
+    "R32_3": "Korea Republic",
+    "R32_4": "Morocco",
+    "R32_5": "Colombia",
+    "R32_6": "Spain",
+    "R32_7": "USA",
+    "R32_8": "Belgium",
+    "R32_9": "Brazil",
+    "R32_10": "Norway",
+    "R32_11": "Mexico",
+    "R32_12": "England",
+    "R32_13": "Argentina",
+    "R32_14": "Australia",
+    "R32_15": "Egypt",
+    "R32_16": "Portugal",
+
+    "R16_1": "France",
+    "R16_2": "Morocco",
+    "R16_3": "Colombia",
+    "R16_4": "Spain",
+    "R16_5": "USA",
+    "R16_6": "Brazil",
+    "R16_7": "England",
+    "R16_8": "Argentina",
+    "R16_9": "Portugal",
+
+    "QF_1": "France",
+    "QF_2": "Spain",
+    "QF_3": "England",
+    "QF_4": "Argentina",
+
+    "SF_1": "France",
+    "SF_2": "England",
+
+    "F_1": "France"
   }
 }
