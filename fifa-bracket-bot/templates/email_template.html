@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FIFA World Cup Bracket Intelligence</title>
+  <style>
+    /* ---- Reset & Base ---- */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: #0a0e1a;
+      color: #e2e8f0;
+      line-height: 1.6;
+    }
+    a { color: #63b3ed; text-decoration: none; }
+
+    /* ---- Wrapper ---- */
+    .wrapper {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    /* ---- Header ---- */
+    .header {
+      background: linear-gradient(135deg, #1a365d 0%, #2d3748 100%);
+      border-radius: 12px;
+      padding: 32px 24px;
+      text-align: center;
+      margin-bottom: 24px;
+      border: 1px solid #2d4a7a;
+    }
+    .header h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.5px;
+    }
+    .header .trophy { font-size: 40px; margin-bottom: 8px; }
+    .header .meta { color: #a0aec0; font-size: 13px; margin-top: 6px; }
+
+    /* ---- Section cards ---- */
+    .card {
+      background: #1a202c;
+      border-radius: 10px;
+      padding: 20px 22px;
+      margin-bottom: 16px;
+      border: 1px solid #2d3748;
+    }
+    .card h2 {
+      font-size: 17px;
+      font-weight: 700;
+      color: #63b3ed;
+      margin-bottom: 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #2d3748;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ---- Score grid ---- */
+    .score-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .score-item {
+      background: #2d3748;
+      border-radius: 8px;
+      padding: 14px 10px;
+      text-align: center;
+    }
+    .score-item .value {
+      font-size: 28px;
+      font-weight: 800;
+      color: #68d391;
+    }
+    .score-item .label {
+      font-size: 11px;
+      color: #a0aec0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+
+    /* ---- Health bar ---- */
+    .health-bar-wrap { margin-top: 12px; }
+    .health-label { font-size: 13px; color: #a0aec0; margin-bottom: 4px; }
+    .health-bar {
+      height: 10px;
+      border-radius: 5px;
+      background: #2d3748;
+      overflow: hidden;
+    }
+    .health-fill {
+      height: 100%;
+      border-radius: 5px;
+      background: linear-gradient(90deg, #f6ad55, #68d391);
+      transition: width 0.5s;
+    }
+
+    /* ---- Match rows ---- */
+    .match-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #2d3748;
+      gap: 8px;
+    }
+    .match-row:last-child { border-bottom: none; }
+    .match-teams { font-size: 14px; font-weight: 600; flex: 1; }
+    .match-score {
+      font-size: 15px;
+      font-weight: 800;
+      color: #fff;
+      min-width: 48px;
+      text-align: center;
+    }
+    .match-round {
+      font-size: 11px;
+      color: #718096;
+      text-align: right;
+      min-width: 80px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .badge-correct { background: #22543d; color: #68d391; }
+    .badge-incorrect { background: #742a2a; color: #fc8181; }
+    .badge-pending { background: #2a4365; color: #63b3ed; }
+
+    /* ---- Pick results ---- */
+    .pick-row {
+      padding: 10px 0;
+      border-bottom: 1px solid #2d3748;
+    }
+    .pick-row:last-child { border-bottom: none; }
+    .pick-match { font-size: 13px; font-weight: 600; }
+    .pick-detail { font-size: 12px; color: #a0aec0; margin-top: 3px; }
+    .pick-points { font-size: 13px; font-weight: 700; text-align: right; }
+
+    /* ---- Rooting guide ---- */
+    .root-row {
+      padding: 12px;
+      border-radius: 8px;
+      background: #2d3748;
+      margin-bottom: 10px;
+    }
+    .root-team { font-size: 16px; font-weight: 800; color: #68d391; }
+    .root-match { font-size: 12px; color: #a0aec0; margin-bottom: 4px; }
+    .root-reason { font-size: 13px; margin-top: 4px; }
+    .root-prob { font-size: 11px; color: #718096; margin-top: 4px; }
+
+    /* ---- AI Analysis ---- */
+    .bullet-list { list-style: none; padding: 0; }
+    .bullet-list li {
+      padding: 6px 0 6px 22px;
+      position: relative;
+      font-size: 14px;
+      border-bottom: 1px solid #2d3748;
+    }
+    .bullet-list li:last-child { border-bottom: none; }
+    .bullet-list li::before {
+      content: "→";
+      position: absolute;
+      left: 0;
+      color: #63b3ed;
+    }
+    .tag-pill {
+      display: inline-block;
+      background: #2d4a7a;
+      color: #90cdf4;
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-size: 12px;
+      margin: 2px 3px 2px 0;
+    }
+
+    /* ---- Error box ---- */
+    .error-box {
+      background: #742a2a;
+      border: 1px solid #9b2c2c;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      color: #fed7d7;
+      font-size: 13px;
+    }
+
+    /* ---- Footer ---- */
+    .footer {
+      text-align: center;
+      color: #4a5568;
+      font-size: 11px;
+      padding: 16px 0 24px;
+    }
+
+    /* ---- Responsive ---- */
+    @media (max-width: 500px) {
+      .score-grid { grid-template-columns: repeat(2, 1fr); }
+      .header h1 { font-size: 20px; }
+      .score-item .value { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- ===== HEADER ===== -->
+  <div class="header">
+    <div class="trophy">🏆</div>
+    <h1>FIFA World Cup Bracket Intelligence</h1>
+    <div class="meta">Generated {{ generated_at | format_dt }}</div>
+  </div>
+
+  <!-- ===== ERRORS ===== -->
+  {% if report.error_messages %}
+  <div class="error-box">
+    <strong>⚠️ Warnings / Errors</strong>
+    <ul style="margin-top:6px;padding-left:18px;">
+      {% for err in report.error_messages %}
+      <li>{{ err }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <!-- ===== EXECUTIVE SUMMARY ===== -->
+  {% if report.ai_analysis and report.ai_analysis.get('executive_summary') %}
+  <div class="card">
+    <h2>📋 Executive Summary</h2>
+    <ul class="bullet-list">
+      {% for bullet in report.ai_analysis['executive_summary'] %}
+      <li>{{ bullet }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <!-- ===== BRACKET SCORE ===== -->
+  <div class="card">
+    <h2>📊 Bracket Score</h2>
+    <div class="score-grid">
+      <div class="score-item">
+        <div class="value">{{ scoring_summary.current_score }}</div>
+        <div class="label">Current Score</div>
+      </div>
+      <div class="score-item">
+        <div class="value">{{ scoring_summary.max_possible_score }}</div>
+        <div class="label">Max Possible</div>
+      </div>
+      <div class="score-item">
+        <div class="value">{{ scoring_summary.health_score }}%</div>
+        <div class="label">Bracket Health</div>
+      </div>
+    </div>
+    <div class="health-bar-wrap">
+      <div class="health-label">Bracket Health</div>
+      <div class="health-bar">
+        <div class="health-fill" style="width: {{ [scoring_summary.health_score, 100] | min }}%;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== YESTERDAY'S RESULTS ===== -->
+  {% if report.yesterday_matches %}
+  <div class="card">
+    <h2>⚽ Yesterday's Results</h2>
+    {% for match in report.yesterday_matches %}
+    <div class="match-row">
+      <div class="match-teams">{{ match.home_team }} vs {{ match.away_team }}</div>
+      <div class="match-score">{{ match.score_display }}</div>
+      <div class="match-round">{{ match.round_type.value.replace('_', ' ').title() }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ===== CORRECT PICKS ===== -->
+  {% if report.bracket_score.correct_picks %}
+  <div class="card">
+    <h2>✅ Correct Picks</h2>
+    {% for pick in report.bracket_score.correct_picks %}
+    <div class="pick-row">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div class="pick-match">{{ pick.match.home_team }} vs {{ pick.match.away_team }}</div>
+          <div class="pick-detail">
+            Your pick: <strong>{{ pick.predicted }}</strong> ✅
+            — Result: {{ pick.actual }}
+          </div>
+          {% if pick.future_value > 0 %}
+          <div class="pick-detail">Future bracket value preserved: +{{ pick.future_value }} pts</div>
+          {% endif %}
+        </div>
+        <div class="pick-points" style="color:#68d391">+{{ pick.points_earned }} pts</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ===== INCORRECT PICKS ===== -->
+  {% if report.bracket_score.incorrect_picks %}
+  <div class="card">
+    <h2>❌ Incorrect Picks</h2>
+    {% for pick in report.bracket_score.incorrect_picks %}
+    <div class="pick-row">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div class="pick-match">{{ pick.match.home_team }} vs {{ pick.match.away_team }}</div>
+          <div class="pick-detail">
+            Your pick: <strong>{{ pick.predicted }}</strong> ❌
+            — Actual winner: {{ pick.actual or 'Unknown' }}
+          </div>
+        </div>
+        <div class="pick-points" style="color:#fc8181">0 / {{ pick.points_possible }} pts</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ===== TODAY'S MATCHES ===== -->
+  {% if report.today_matches %}
+  <div class="card">
+    <h2>🗓️ Today's Matches</h2>
+    {% for match in report.today_matches %}
+    <div class="match-row">
+      <div class="match-teams">{{ match.home_team }} vs {{ match.away_team }}</div>
+      <div class="match-score">
+        {% if match.status.value == 'completed' %}
+          {{ match.score_display }}
+        {% elif match.status.value == 'live' %}
+          🔴 LIVE
+        {% else %}
+          TBD
+        {% endif %}
+      </div>
+      <div class="match-round">{{ match.round_type.value.replace('_', ' ').title() }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ===== WHO TO ROOT FOR ===== -->
+  {% if report.rooting_guide %}
+  <div class="card">
+    <h2>🎯 Who To Root For</h2>
+    {% for item in report.rooting_guide %}
+    <div class="root-row">
+      <div class="root-match">{{ item.match }}</div>
+      <div class="root-team">Root For: {{ item.root_for }}</div>
+      <div class="root-reason">{{ item.reason }}</div>
+      <div class="root-prob">Win probability: {{ item.win_probability }}% | Impact: {{ item.impact }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ===== AI ANALYSIS ===== -->
+  {% if report.ai_analysis and not report.ai_analysis.get('error') %}
+  <div class="card">
+    <h2>🤖 AI Analysis</h2>
+
+    {% if report.ai_analysis.get('biggest_winners') %}
+    <div style="margin-bottom:12px;">
+      <div style="font-size:13px;color:#a0aec0;margin-bottom:6px;">🟢 Biggest Winners</div>
+      {% for team in report.ai_analysis['biggest_winners'] %}
+      <span class="tag-pill">{{ team }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if report.ai_analysis.get('biggest_threats') %}
+    <div style="margin-bottom:12px;">
+      <div style="font-size:13px;color:#a0aec0;margin-bottom:6px;">🔴 Biggest Threats</div>
+      {% for team in report.ai_analysis['biggest_threats'] %}
+      <span class="tag-pill" style="background:#4a1d1d;color:#fc8181;">{{ team }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if report.ai_analysis.get('what_to_watch') %}
+    <div style="margin-bottom:12px;">
+      <div style="font-size:13px;color:#a0aec0;margin-bottom:6px;">👁️ What To Watch</div>
+      <ul class="bullet-list">
+        {% for item in report.ai_analysis['what_to_watch'] %}
+        <li>{{ item }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    {% if report.ai_analysis.get('outlook') %}
+    <div>
+      <div style="font-size:13px;color:#a0aec0;margin-bottom:6px;">🔮 Championship Outlook</div>
+      <div style="font-size:14px;">{{ report.ai_analysis['outlook'] }}</div>
+    </div>
+    {% endif %}
+  </div>
+  {% elif report.ai_analysis and report.ai_analysis.get('error') %}
+  <div class="card">
+    <h2>🤖 AI Analysis</h2>
+    <div style="color:#718096;font-size:13px;">{{ report.ai_analysis['error'] }}</div>
+  </div>
+  {% endif %}
+
+  <!-- ===== FOOTER ===== -->
+  <div class="footer">
+    FIFA Bracket Bot · Auto-generated report · {{ generated_at | format_dt }}<br>
+    Powered by GitHub Actions
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,76 @@
+name: FIFA Bracket Daily Report
+
+on:
+  schedule:
+    # 17:00 UTC = 09:00 America/Los_Angeles (PST, UTC-8)
+    # Adjust to 16:00 UTC during PDT (UTC-7) season – handled by bot itself
+    - cron: "0 17 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Send email? (set 'true' to skip sending)"
+        required: false
+        default: "false"
+      log_level:
+        description: "Log level (DEBUG/INFO/WARNING)"
+        required: false
+        default: "INFO"
+
+jobs:
+  send-report:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: fifa-bracket-bot
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: fifa-bracket-bot/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run tests
+        run: pytest tests/ -v --cov=app --cov-report=term-missing
+
+      - name: Send daily bracket report
+        env:
+          # Email
+          EMAIL_PROVIDER: ${{ secrets.EMAIL_PROVIDER }}
+          EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
+          GMAIL_CLIENT_ID: ${{ secrets.GMAIL_CLIENT_ID }}
+          GMAIL_CLIENT_SECRET: ${{ secrets.GMAIL_CLIENT_SECRET }}
+          GMAIL_REFRESH_TOKEN: ${{ secrets.GMAIL_REFRESH_TOKEN }}
+          # OpenAI
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL || 'gpt-4o-mini' }}
+          # Data providers
+          DATA_PROVIDERS: ${{ vars.DATA_PROVIDERS || 'api_football,fotmob,espn' }}
+          API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+          # Paths
+          BRACKET_PATH: data/bracket.json
+          TEMPLATE_PATH: templates/email_template.html
+          # Misc
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+          LOG_LEVEL: ${{ github.event.inputs.log_level || 'INFO' }}
+        run: python -m app.main
+
+      - name: Upload logs as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bracket-bot-logs-${{ github.run_id }}
+          path: fifa-bracket-bot/logs/
+          retention-days: 14
+          if-no-files-found: ignore

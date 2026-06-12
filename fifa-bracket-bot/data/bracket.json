@@ -1,0 +1,37 @@
+{
+  "winner": "Argentina",
+  "runner_up": "France",
+  "semifinals": [
+    "Argentina",
+    "Brazil",
+    "France",
+    "Spain"
+  ],
+  "quarterfinals": [
+    "Argentina",
+    "Netherlands",
+    "Brazil",
+    "England",
+    "France",
+    "Portugal",
+    "Spain",
+    "Germany"
+  ],
+  "match_predictions": {
+    "R16_1": "Argentina",
+    "R16_2": "Netherlands",
+    "R16_3": "Brazil",
+    "R16_4": "England",
+    "R16_5": "France",
+    "R16_6": "Portugal",
+    "R16_7": "Spain",
+    "R16_8": "Germany",
+    "QF_1": "Argentina",
+    "QF_2": "Brazil",
+    "QF_3": "France",
+    "QF_4": "Spain",
+    "SF_1": "Argentina",
+    "SF_2": "France",
+    "F_1": "Argentina"
+  }
+}
