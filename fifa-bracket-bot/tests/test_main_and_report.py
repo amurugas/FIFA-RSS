@@ -260,3 +260,88 @@ class TestGenerateAiAnalysis:
                 model="gpt-4o-mini",
             )
         assert "parse_error" in result or "raw" in result
+
+
+class TestGenerateAiAnalysisExtraContext:
+    """Tests for the extra_context enrichment in generate_ai_analysis."""
+
+    def test_extra_context_included_in_payload(self):
+        """extra_context data (future_health, team_value_ranking, match_impact_scores) is passed to LLM."""
+        from app.report_generator import generate_ai_analysis
+
+        extra = {
+            "future_health": {"current_score": 0, "expected_future_score": 72.7},
+            "team_value_ranking": [{"team": "France", "bracket_value": 60}],
+            "match_impact_scores": [{"match": "France vs Morocco", "rooting_interest": "VERY HIGH"}],
+        }
+
+        captured_prompts = []
+        def fake_call(prompt, api_key, model, **kwargs):
+            captured_prompts.append(prompt)
+            return '{"executive_summary": ["Test"], "biggest_winners": [], "biggest_threats": [], "what_to_watch": [], "outlook": "ok"}'
+
+        score = BracketScore()
+        with patch("app.report_generator._call_openai", side_effect=fake_call):
+            result = generate_ai_analysis(
+                bracket_score=score,
+                yesterday_matches=[],
+                today_matches=[],
+                bracket=BracketPrediction(winner="France"),
+                api_key="fake_key",
+                model="gpt-4o-mini",
+                extra_context=extra,
+            )
+
+        assert len(captured_prompts) == 1
+        assert "future_health" in captured_prompts[0]
+        assert "team_value_ranking" in captured_prompts[0]
+        assert "match_impact_scores" in captured_prompts[0]
+        assert result.get("executive_summary") == ["Test"]
+
+    def test_no_extra_context_still_works(self):
+        """When extra_context is None, generate_ai_analysis works normally."""
+        from app.report_generator import generate_ai_analysis
+
+        score = BracketScore()
+        fake_response = '{"executive_summary": ["All good"], "biggest_winners": [], "biggest_threats": [], "what_to_watch": [], "outlook": "ok"}'
+        with patch("app.report_generator._call_openai", return_value=fake_response):
+            result = generate_ai_analysis(
+                bracket_score=score,
+                yesterday_matches=[],
+                today_matches=[],
+                bracket=BracketPrediction(winner="France"),
+                api_key="fake_key",
+                model="gpt-4o-mini",
+                extra_context=None,
+            )
+        assert result.get("executive_summary") == ["All good"]
+
+    def test_extra_context_partial_keys(self):
+        """extra_context with only some keys populates only those in the DATA payload."""
+        import json
+        from app.report_generator import generate_ai_analysis
+
+        extra = {"future_health": {"current_score": 5}}
+
+        captured_prompts = []
+        def fake_call(prompt, api_key, model, **kwargs):
+            captured_prompts.append(prompt)
+            return '{"executive_summary": [], "biggest_winners": [], "biggest_threats": [], "what_to_watch": [], "outlook": ""}'
+
+        score = BracketScore()
+        with patch("app.report_generator._call_openai", side_effect=fake_call):
+            generate_ai_analysis(
+                bracket_score=score,
+                yesterday_matches=[],
+                today_matches=[],
+                bracket=BracketPrediction(),
+                api_key="fake_key",
+                model="gpt-4o-mini",
+                extra_context=extra,
+            )
+
+        # The DATA: JSON block should contain future_health but NOT team_value_ranking
+        prompt = captured_prompts[0]
+        data_section = prompt[prompt.index("DATA:"):]
+        assert '"future_health"' in data_section
+        assert '"team_value_ranking"' not in data_section

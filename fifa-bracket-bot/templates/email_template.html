@@ -159,6 +159,86 @@
     .root-reason { font-size: 13px; margin-top: 4px; }
     .root-prob { font-size: 11px; color: #718096; margin-top: 4px; }
 
+    /* ---- Impact score ---- */
+    .impact-row {
+      padding: 14px;
+      border-radius: 8px;
+      background: #2d3748;
+      margin-bottom: 12px;
+    }
+    .impact-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+    .impact-match { font-size: 15px; font-weight: 700; }
+    .impact-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 99px;
+      white-space: nowrap;
+    }
+    .impact-very-high { background: #c05621; color: #fbd38d; }
+    .impact-high      { background: #2c7a7b; color: #81e6d9; }
+    .impact-medium    { background: #2a4365; color: #63b3ed; }
+    .impact-low       { background: #1a365d; color: #90cdf4; }
+    .impact-neutral   { background: #2d3748; color: #718096; }
+    .impact-outcomes { margin-top: 6px; }
+    .outcome-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      font-size: 13px;
+      border-bottom: 1px solid #4a5568;
+    }
+    .outcome-item:last-child { border-bottom: none; }
+    .outcome-rank { color: #a0aec0; min-width: 18px; }
+    .outcome-label { flex: 1; }
+    .outcome-ev { color: #68d391; font-weight: 700; }
+    .outcome-ev-baseline { color: #718096; }
+    .impact-reason { font-size: 12px; color: #a0aec0; margin-top: 6px; }
+
+    /* ---- Future Health ---- */
+    .health-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .health-item {
+      background: #2d3748;
+      border-radius: 8px;
+      padding: 12px 10px;
+      text-align: center;
+    }
+    .health-item .value { font-size: 24px; font-weight: 800; color: #68d391; }
+    .health-item .label {
+      font-size: 11px;
+      color: #a0aec0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+
+    /* ---- Team Value table ---- */
+    .team-value-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .team-value-table th {
+      text-align: left;
+      color: #a0aec0;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 6px 8px;
+      border-bottom: 1px solid #4a5568;
+    }
+    .team-value-table td { padding: 8px 8px; border-bottom: 1px solid #2d3748; }
+    .team-value-table tr:last-child td { border-bottom: none; }
+    .tv-rank { color: #718096; }
+    .tv-team { font-weight: 600; }
+    .tv-value { color: #68d391; font-weight: 700; text-align: right; }
+
     /* ---- AI Analysis ---- */
     .bullet-list { list-style: none; padding: 0; }
     .bullet-list li {
@@ -270,6 +350,35 @@
     </div>
   </div>
 
+  <!-- ===== FUTURE HEALTH ===== -->
+  {% if report.future_health %}
+  <div class="card">
+    <h2>🔭 Future Health</h2>
+    <div class="health-grid">
+      <div class="health-item">
+        <div class="value">{{ report.future_health.current_score }}</div>
+        <div class="label">Current Score</div>
+      </div>
+      <div class="health-item">
+        <div class="value">{{ report.future_health.expected_future_score | int }}</div>
+        <div class="label">Expected Future Score</div>
+      </div>
+      <div class="health-item">
+        <div class="value">{{ report.future_health.bracket_survival }}%</div>
+        <div class="label">Bracket Survival</div>
+      </div>
+      <div class="health-item">
+        <div class="value">{{ report.future_health.elite_finish_chance }}%</div>
+        <div class="label">Elite Finish Chance</div>
+      </div>
+    </div>
+    <div style="font-size:12px;color:#718096;margin-top:4px;">
+      Expected Future Score reflects advancement probabilities for your surviving bracket picks.
+      Bracket Survival = P(champion &amp; runner-up picks still on track).
+    </div>
+  </div>
+  {% endif %}
+
   <!-- ===== YESTERDAY'S RESULTS ===== -->
   {% if report.yesterday_matches %}
   <div class="card">
@@ -351,7 +460,7 @@
   </div>
   {% endif %}
 
-  <!-- ===== WHO TO ROOT FOR ===== -->
+  <!-- ===== WHO TO ROOT FOR (legacy) ===== -->
   {% if report.rooting_guide %}
   <div class="card">
     <h2>🎯 Who To Root For</h2>
@@ -363,6 +472,67 @@
       <div class="root-prob">Win probability: {{ item.win_probability }}% | Impact: {{ item.impact }}</div>
     </div>
     {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ===== TODAY'S MOST IMPORTANT MATCHES (Bracket Impact Score) ===== -->
+  {% if report.match_impact_scores %}
+  <div class="card">
+    <h2>🔥 Today's Most Important Matches</h2>
+    {% for mis in report.match_impact_scores %}
+    <div class="impact-row">
+      <div class="impact-header">
+        <div class="impact-match">{{ mis.match }}</div>
+        <span class="impact-badge impact-{{ mis.rooting_interest | lower | replace(' ', '-') }}">{{ mis.rooting_interest }}</span>
+      </div>
+      <div class="impact-outcomes">
+      {% for o in mis.outcomes %}
+        <div class="outcome-item">
+          <span class="outcome-rank">{{ loop.index }}.</span>
+          <span class="outcome-label">{{ o.outcome }}</span>
+          {% if o.delta > 0 %}
+          <span class="outcome-ev">+{{ o.delta | int }} EV</span>
+          {% else %}
+          <span class="outcome-ev-baseline">baseline</span>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% if mis.reason %}
+      <div class="impact-reason">{{ mis.reason }}</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ===== TEAM VALUE RANKING ===== -->
+  {% if report.team_value_ranking %}
+  <div class="card">
+    <h2>📈 Team Value Ranking</h2>
+    <table class="team-value-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Team</th>
+          <th style="text-align:right;">Bracket Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for tv in report.team_value_ranking %}
+        <tr>
+          <td class="tv-rank">{{ loop.index }}</td>
+          <td class="tv-team">{{ tv.team }}</td>
+          <td class="tv-value">+{{ tv.bracket_value }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if report.team_value_ranking %}
+    <div style="font-size:12px;color:#718096;margin-top:8px;">
+      Top team: {{ report.team_value_ranking[0].team }} — your champion pick drives the most bracket equity.
+    </div>
+    {% endif %}
   </div>
   {% endif %}
 

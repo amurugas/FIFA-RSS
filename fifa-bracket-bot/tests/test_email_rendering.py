@@ -182,3 +182,131 @@ class TestRenderHtml:
         html = render_html(report, TEMPLATE_PATH)
         assert html.strip().startswith("<!DOCTYPE html>") or "<html" in html
         assert "</html>" in html
+
+
+class TestRenderHtmlNewSections:
+    """Tests for Features 3, 4, 5 — new HTML sections."""
+
+    @pytest.fixture(autouse=True)
+    def skip_if_no_template(self):
+        if not Path(TEMPLATE_PATH).exists():
+            pytest.skip("Template file not found")
+
+    def _make_full_report(self):
+        """Build a realistic report with all new fields populated."""
+        from app.models import (
+            FutureHealth, MatchImpactScore, OutcomeImpact, TeamValue
+        )
+        future_health = FutureHealth(
+            current_score=0,
+            expected_future_score=72.7,
+            bracket_survival=29.2,
+            elite_finish_chance=20.5,
+        )
+        impact_scores = [
+            MatchImpactScore(
+                match="France vs Morocco",
+                home_team="France",
+                away_team="Morocco",
+                outcomes=[
+                    OutcomeImpact(outcome="France win", ev=124.0, delta=56.0),
+                    OutcomeImpact(outcome="Draw", ev=102.4, delta=34.4),
+                    OutcomeImpact(outcome="Morocco win", ev=68.0, delta=0.0),
+                ],
+                rooting_interest="VERY HIGH",
+                reason="France is your predicted champion.",
+            )
+        ]
+        team_ranking = [
+            TeamValue(team="France", bracket_value=60),
+            TeamValue(team="England", bracket_value=28),
+            TeamValue(team="Spain", bracket_value=12),
+        ]
+        report = _make_report()
+        report.future_health = future_health
+        report.match_impact_scores = impact_scores
+        report.team_value_ranking = team_ranking
+        return report
+
+    def test_future_health_section_renders(self):
+        report = self._make_full_report()
+        html = render_html(report, TEMPLATE_PATH)
+        assert "Future Health" in html
+
+    def test_future_health_shows_expected_score(self):
+        report = self._make_full_report()
+        html = render_html(report, TEMPLATE_PATH)
+        assert "Expected Future Score" in html
+        assert "72" in html  # 72.7 → 72
+
+    def test_future_health_shows_survival(self):
+        report = self._make_full_report()
+        html = render_html(report, TEMPLATE_PATH)
+        assert "Bracket Survival" in html
+        assert "29.2" in html
+
+    def test_future_health_shows_elite_chance(self):
+        report = self._make_full_report()
+        html = render_html(report, TEMPLATE_PATH)
+        assert "Elite Finish Chance" in html
+        assert "20.5" in html
+
+    def test_unscored_bracket_does_not_show_zero_percent_as_main_health(self):
+        """An unscored bracket should display Future Health, not just 0% health."""
+        report = self._make_full_report()
+        html = render_html(report, TEMPLATE_PATH)
+        # Future Health panel should be present and show a real expected score
+        assert "Future Health" in html
+        assert "Expected Future Score" in html
+        # 0% should not be the only health indicator shown
+        assert "Expected Future Score" in html
+
+    def test_impact_scores_section_renders(self):
+        report = self._make_full_report()
+        html = render_html(report, TEMPLATE_PATH)
+        assert "Most Important Matches" in html
+
+    def test_impact_scores_show_match_name(self):
+        report = self._make_full_report()
+        html = render_html(report, TEMPLATE_PATH)
+        assert "France vs Morocco" in html
+
+    def test_impact_scores_show_rooting_interest(self):
+        report = self._make_full_report()
+        html = render_html(report, TEMPLATE_PATH)
+        assert "VERY HIGH" in html
+
+    def test_impact_scores_show_outcomes(self):
+        report = self._make_full_report()
+        html = render_html(report, TEMPLATE_PATH)
+        assert "France win" in html
+        assert "Morocco win" in html
+        assert "Draw" in html
+
+    def test_impact_scores_show_ev_deltas(self):
+        report = self._make_full_report()
+        html = render_html(report, TEMPLATE_PATH)
+        assert "+56 EV" in html
+        assert "baseline" in html
+
+    def test_team_value_ranking_renders(self):
+        report = self._make_full_report()
+        html = render_html(report, TEMPLATE_PATH)
+        assert "Team Value Ranking" in html
+
+    def test_team_value_ranking_shows_teams(self):
+        report = self._make_full_report()
+        html = render_html(report, TEMPLATE_PATH)
+        assert "France" in html
+        assert "England" in html
+        assert "+60" in html
+        assert "+28" in html
+
+    def test_template_renders_without_new_fields(self):
+        """Report without new fields (None/empty) should still render without errors."""
+        report = _make_report()
+        # future_health=None and match_impact_scores=[], team_value_ranking=[] by default
+        html = render_html(report, TEMPLATE_PATH)
+        assert isinstance(html, str)
+        assert len(html) > 100
+        assert "FIFA World Cup Bracket Intelligence" in html
