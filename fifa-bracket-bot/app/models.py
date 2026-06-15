@@ -168,6 +168,57 @@ class ProbabilityResult:
 
 
 @dataclass
+class OutcomeImpact:
+    """Expected bracket value for one possible match outcome."""
+    outcome: str   # e.g., "Belgium win", "Draw", "Egypt win"
+    ev: float      # Expected bracket value for this outcome
+    delta: float   # EV relative to the baseline (lowest-EV) outcome; baseline = 0.0
+
+
+@dataclass
+class MatchImpactScore:
+    """Bracket Impact Score for a single group-stage match."""
+    match: str                     # e.g., "Belgium vs Egypt"
+    home_team: str
+    away_team: str
+    outcomes: list[OutcomeImpact]  # ranked best → worst by EV
+    rooting_interest: str          # "VERY HIGH", "HIGH", "MEDIUM", "LOW", "NEUTRAL"
+    reason: str                    # advancement-based explanation
+
+
+@dataclass
+class FutureHealth:
+    """
+    Forward-looking bracket health metrics.
+
+    expected_future_score: sum over non-eliminated bracket picks of
+        (future_bracket_value × Elo-based advancement probability over ~3 rounds).
+        Provides a meaningful positive value even before any matches are scored.
+
+    bracket_survival: probability (0–100) that the champion and runner-up picks
+        are both still on track to reach at least the semifinal/quarterfinal.
+        Derived from the product of their Elo advancement probabilities, set to 0
+        if either pick has already been eliminated.
+
+    elite_finish_chance: probability (0–100) that both the champion and runner-up
+        picks advance to the final. Approximated as
+        P(champion survives 5 rounds) × P(runner-up survives 4 rounds) × 100.
+        Serves as a proxy for a top-quartile bracket outcome.
+    """
+    current_score: int
+    expected_future_score: float
+    bracket_survival: float    # 0–100
+    elite_finish_chance: float  # 0–100
+
+
+@dataclass
+class TeamValue:
+    """Net bracket value for a single team."""
+    team: str
+    bracket_value: int
+
+
+@dataclass
 class DailyReport:
     generated_at: datetime
     yesterday_matches: list[Match]
@@ -175,6 +226,10 @@ class DailyReport:
     bracket_score: BracketScore
     pick_results: list[PickResult]
     probability_results: list[ProbabilityResult]
-    rooting_guide: list[dict]  # {"team": ..., "reason": ..., "impact": ...}
+    rooting_guide: list[dict]  # {"match": ..., "root_for": ..., "reason": ..., "impact": ..., ...}
     ai_analysis: dict  # structured sections from LLM
     error_messages: list[str] = field(default_factory=list)
+    # Forward-looking features
+    match_impact_scores: list[MatchImpactScore] = field(default_factory=list)
+    future_health: Optional[FutureHealth] = None
+    team_value_ranking: list[TeamValue] = field(default_factory=list)
