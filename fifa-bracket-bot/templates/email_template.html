@@ -112,7 +112,7 @@
       gap: 8px;
     }
     .match-row:last-child { border-bottom: none; }
-    .match-teams { font-size: 14px; font-weight: 600; flex: 1; }
+    .match-teams { font-size: 14px; font-weight: 600; flex: 1; color: #e2e8f0; }
     .match-score {
       font-size: 15px;
       font-weight: 800;
@@ -143,7 +143,7 @@
       border-bottom: 1px solid #2d3748;
     }
     .pick-row:last-child { border-bottom: none; }
-    .pick-match { font-size: 13px; font-weight: 600; }
+    .pick-match { font-size: 13px; font-weight: 600; color: #e2e8f0; }
     .pick-detail { font-size: 12px; color: #a0aec0; margin-top: 3px; }
     .pick-points { font-size: 13px; font-weight: 700; text-align: right; }
 
@@ -156,7 +156,7 @@
     }
     .root-team { font-size: 16px; font-weight: 800; color: #68d391; }
     .root-match { font-size: 12px; color: #a0aec0; margin-bottom: 4px; }
-    .root-reason { font-size: 13px; margin-top: 4px; }
+    .root-reason { font-size: 13px; margin-top: 4px; color: #e2e8f0; }
     .root-prob { font-size: 11px; color: #718096; margin-top: 4px; }
 
     /* ---- Impact score ---- */
@@ -172,7 +172,7 @@
       align-items: flex-start;
       margin-bottom: 8px;
     }
-    .impact-match { font-size: 15px; font-weight: 700; }
+    .impact-match { font-size: 15px; font-weight: 700; color: #e2e8f0; }
     .impact-badge {
       font-size: 11px;
       font-weight: 700;
@@ -195,7 +195,7 @@
     }
     .outcome-item:last-child { border-bottom: none; }
     .outcome-rank { color: #a0aec0; min-width: 18px; }
-    .outcome-label { flex: 1; }
+    .outcome-label { flex: 1; color: #e2e8f0; }
     .outcome-ev { color: #68d391; font-weight: 700; }
     .outcome-ev-baseline { color: #718096; }
     .impact-reason { font-size: 12px; color: #a0aec0; margin-top: 6px; }
@@ -233,10 +233,10 @@
       padding: 6px 8px;
       border-bottom: 1px solid #4a5568;
     }
-    .team-value-table td { padding: 8px 8px; border-bottom: 1px solid #2d3748; }
+    .team-value-table td { padding: 8px 8px; border-bottom: 1px solid #2d3748; color: #e2e8f0; }
     .team-value-table tr:last-child td { border-bottom: none; }
     .tv-rank { color: #718096; }
-    .tv-team { font-weight: 600; }
+    .tv-team { font-weight: 600; color: #e2e8f0; }
     .tv-value { color: #68d391; font-weight: 700; text-align: right; }
 
     /* ---- AI Analysis ---- */
@@ -245,6 +245,7 @@
       padding: 6px 0 6px 22px;
       position: relative;
       font-size: 14px;
+      color: #e2e8f0;
       border-bottom: 1px solid #2d3748;
     }
     .bullet-list li:last-child { border-bottom: none; }
@@ -278,7 +279,7 @@
     /* ---- Footer ---- */
     .footer {
       text-align: center;
-      color: #4a5568;
+      color: #718096;
       font-size: 11px;
       padding: 16px 0 24px;
     }
@@ -291,7 +292,7 @@
     }
   </style>
 </head>
-<body>
+<body style="background:#0a0e1a;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.6;">
 <div class="wrapper">
 
   <!-- ===== HEADER ===== -->
@@ -573,7 +574,7 @@
     {% if report.ai_analysis.get('outlook') %}
     <div>
       <div style="font-size:13px;color:#a0aec0;margin-bottom:6px;">🔮 Championship Outlook</div>
-      <div style="font-size:14px;">{{ report.ai_analysis['outlook'] }}</div>
+      <div style="font-size:14px;color:#e2e8f0;">{{ report.ai_analysis['outlook'] }}</div>
     </div>
     {% endif %}
   </div>
