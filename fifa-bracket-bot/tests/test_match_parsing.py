@@ -112,7 +112,7 @@ class TestEspnProviderParsing:
                 }
             ],
         }
-        match = provider._parse_event(event)
+        match = provider._parse_event(event, date(2026, 7, 10))
         assert match.home_team.name == "Argentina"
         assert match.away_team.name == "Netherlands"
         assert match.home_score == 3
@@ -145,7 +145,7 @@ class TestEspnProviderParsing:
                 }
             ],
         }
-        match = provider._parse_event(event)
+        match = provider._parse_event(event, date(2026, 7, 11))
         assert match.status == MatchStatus.SCHEDULED
         assert match.home_score is None
         assert match.away_score is None
@@ -164,7 +164,7 @@ class TestFotMobProviderParsing:
             "status": {"finished": True, "started": True},
             "roundName": "Quarterfinals",
         }
-        match = provider._parse_match(raw)
+        match = provider._parse_match(raw, date(2026, 7, 10))
         assert match.home_team.name == "Spain"
         assert match.away_team.name == "Germany"
         assert match.home_score == 2
@@ -182,6 +182,6 @@ class TestFotMobProviderParsing:
             "status": {"finished": False, "started": True},
             "roundName": "Semifinals",
         }
-        match = provider._parse_match(raw)
+        match = provider._parse_match(raw, date(2026, 7, 10))
         assert match.status == MatchStatus.LIVE
         assert match.round_type == RoundType.SEMIFINAL
