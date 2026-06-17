@@ -4,7 +4,7 @@ on:
   schedule:
     # 17:00 UTC = 09:00 America/Los_Angeles (PST, UTC-8)
     # During PDT (UTC-7), adjust to 16:00 UTC if needed via vars.CRON_HOUR
-    - cron: "0 17 * * *"
+    - cron: "0 15 * * *"
   workflow_dispatch:
     inputs:
       dry_run:
