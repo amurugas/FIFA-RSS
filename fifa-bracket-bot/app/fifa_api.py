@@ -23,6 +23,8 @@ from .models import Match, MatchEvent, MatchStatus, RoundType, Team
 
 logger = logging.getLogger(__name__)
 
+_KNOCKOUT_START_DATE = date(2026, 6, 28)
+
 _ROUND_MAP: dict[str, RoundType] = {
     "group stage": RoundType.GROUP_STAGE,
     "group": RoundType.GROUP_STAGE,
@@ -64,6 +66,13 @@ def _get_with_retry(
 
 def _parse_round(raw: str) -> RoundType:
     return _ROUND_MAP.get(raw.lower().strip(), RoundType.GROUP_STAGE)
+
+
+def _normalize_round_for_date(target_date: date, parsed_round: RoundType) -> RoundType:
+    """Force pre-knockout matches to remain group-stage through June 27, 2026."""
+    if target_date < _KNOCKOUT_START_DATE:
+        return RoundType.GROUP_STAGE
+    return parsed_round
 
 
 class MatchProvider(ABC):
@@ -117,12 +126,12 @@ class ApiFootballProvider(MatchProvider):
         matches: list[Match] = []
         for fixture in data.get("response", []):
             try:
-                matches.append(self._parse_fixture(fixture))
+                matches.append(self._parse_fixture(fixture, target_date))
             except Exception as exc:  # noqa: BLE001
                 logger.warning("Failed to parse fixture: %s", exc)
         return matches
 
-    def _parse_fixture(self, fixture: dict) -> Match:
+    def _parse_fixture(self, fixture: dict, target_date: date) -> Match:
         f = fixture["fixture"]
         league = fixture["league"]
         teams = fixture["teams"]
@@ -139,12 +148,13 @@ class ApiFootballProvider(MatchProvider):
             "PST": MatchStatus.POSTPONED,
             "CANC": MatchStatus.CANCELLED,
         }.get(status_raw, MatchStatus.SCHEDULED)
+        parsed_round = _parse_round(league.get("round", ""))
 
         return Match(
             match_id=str(f["id"]),
             home_team=Team(name=teams["home"]["name"], code=teams["home"].get("code", "")),
             away_team=Team(name=teams["away"]["name"], code=teams["away"].get("code", "")),
-            round_type=_parse_round(league.get("round", "")),
+            round_type=_normalize_round_for_date(target_date, parsed_round),
             match_datetime=match_dt,
             status=status,
             home_score=goals.get("home"),
@@ -176,12 +186,12 @@ class FotMobProvider(MatchProvider):
                 continue
             for match_raw in league.get("matches", []):
                 try:
-                    matches.append(self._parse_match(match_raw))
+                    matches.append(self._parse_match(match_raw, target_date))
                 except Exception as exc:  # noqa: BLE001
                     logger.warning("FotMob parse error: %s", exc)
         return matches
 
-    def _parse_match(self, raw: dict) -> Match:
+    def _parse_match(self, raw: dict, target_date: date) -> Match:
         status_raw = raw.get("status", {})
         finished = status_raw.get("finished", False)
         started = status_raw.get("started", False)
@@ -198,12 +208,13 @@ class FotMobProvider(MatchProvider):
 
         score_home = raw.get("home", {}).get("score")
         score_away = raw.get("away", {}).get("score")
+        parsed_round = _parse_round(raw.get("roundName", ""))
 
         return Match(
             match_id=str(raw.get("id", "")),
             home_team=Team(name=raw.get("home", {}).get("name", "Unknown")),
             away_team=Team(name=raw.get("away", {}).get("name", "Unknown")),
-            round_type=_parse_round(raw.get("roundName", "")),
+            round_type=_normalize_round_for_date(target_date, parsed_round),
             match_datetime=match_dt,
             status=status,
             home_score=int(score_home) if score_home is not None else None,
@@ -230,12 +241,12 @@ class EspnProvider(MatchProvider):
         matches: list[Match] = []
         for event in data.get("events", []):
             try:
-                matches.append(self._parse_event(event))
+                matches.append(self._parse_event(event, target_date))
             except Exception as exc:  # noqa: BLE001
                 logger.warning("ESPN parse error: %s", exc)
         return matches
 
-    def _parse_event(self, event: dict) -> Match:
+    def _parse_event(self, event: dict, target_date: date) -> Match:
         competition = event.get("competitions", [{}])[0]
         competitors = competition.get("competitors", [])
         home = next((c for c in competitors if c.get("homeAway") == "home"), {})
@@ -262,6 +273,7 @@ class EspnProvider(MatchProvider):
             away_score = None
 
         round_raw = competition.get("notes", [{}])[0].get("headline", "") if competition.get("notes") else ""
+        parsed_round = _parse_round(round_raw)
 
         return Match(
             match_id=str(event.get("id", "")),
@@ -273,7 +285,7 @@ class EspnProvider(MatchProvider):
                 name=away.get("team", {}).get("displayName", "Unknown"),
                 code=away.get("team", {}).get("abbreviation", ""),
             ),
-            round_type=_parse_round(round_raw),
+            round_type=_normalize_round_for_date(target_date, parsed_round),
             match_datetime=match_dt,
             status=status,
             home_score=home_score,
